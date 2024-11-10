@@ -149,7 +149,14 @@ class GeneratorPage extends StatelessWidget {
   }
 }
 
-class FavoritesPage extends StatelessWidget {
+class FavoritesPage extends StatefulWidget {
+  @override
+  _FavoritesPageState createState() => _FavoritesPageState();
+}
+
+class _FavoritesPageState extends State<FavoritesPage> {
+  bool isListView = true;
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -160,18 +167,104 @@ class FavoritesPage extends StatelessWidget {
       );
     }
 
-    return ListView(
+    return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(20),
-          child: Text('You have ${appState.favorites.length} favorites:'),
-        ),
-        for (var pair in appState.favorites)
-          ListTile(
-            leading: Icon(Icons.favorite),
-            title: Text(pair.asLowerCase),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('You have ${appState.favorites.length} favorites:'),
+              IconButton(
+                icon: Icon(isListView ? Icons.grid_view : Icons.list),
+                onPressed: () {
+                  setState(() {
+                    isListView = !isListView;
+                  });
+                },
+              ),
+            ],
           ),
+        ),
+        Expanded(
+          child: isListView
+              ? ListView(
+                  children: appState.favorites.map((pair) {
+                    return ListTile(
+                      leading: Icon(Icons.favorite),
+                      title: Text(pair.asLowerCase),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditFavoritePage(pair: pair),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                )
+              : GridView.count(
+                  crossAxisCount: 2,
+                  children: appState.favorites.map((pair) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditFavoritePage(pair: pair),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(pair.asLowerCase),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+        ),
       ],
+    );
+  }
+}
+
+class EditFavoritePage extends StatelessWidget {
+  final WordPair pair;
+
+  EditFavoritePage({required this.pair});
+
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.read<MyAppState>();
+    var controller = TextEditingController(text: pair.asLowerCase);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Favorite'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(labelText: 'Edit Word Pair'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
